@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option go_package = "protos/";
+
+message EventMsg {
+  string Text = 1;
+  string Event = 2;
+  string Action = 3;
+}
+
+message StringMsg {
+  string Text = 1;
+}
+
+message Void {
+}
+
+service Event {
+  rpc Status(Void) returns(StringMsg);
+  rpc Echo(StringMsg) returns(StringMsg);
+}
