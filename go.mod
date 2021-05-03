@@ -1,4 +1,4 @@
-module grpc-start
+module grpc-sse
 
 go 1.16
 

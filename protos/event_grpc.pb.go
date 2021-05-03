@@ -7,6 +7,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -18,8 +19,10 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EventClient interface {
-	Status(ctx context.Context, in *Void, opts ...grpc.CallOption) (*StringMsg, error)
+	Status(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*StringMsg, error)
 	Echo(ctx context.Context, in *StringMsg, opts ...grpc.CallOption) (*StringMsg, error)
+	SubscribeToEvents(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (Event_SubscribeToEventsClient, error)
+	BroadcastEvent(ctx context.Context, in *EventCode, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type eventClient struct {
@@ -30,7 +33,7 @@ func NewEventClient(cc grpc.ClientConnInterface) EventClient {
 	return &eventClient{cc}
 }
 
-func (c *eventClient) Status(ctx context.Context, in *Void, opts ...grpc.CallOption) (*StringMsg, error) {
+func (c *eventClient) Status(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*StringMsg, error) {
 	out := new(StringMsg)
 	err := c.cc.Invoke(ctx, "/Event/Status", in, out, opts...)
 	if err != nil {
@@ -48,12 +51,55 @@ func (c *eventClient) Echo(ctx context.Context, in *StringMsg, opts ...grpc.Call
 	return out, nil
 }
 
+func (c *eventClient) SubscribeToEvents(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (Event_SubscribeToEventsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Event_ServiceDesc.Streams[0], "/Event/SubscribeToEvents", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &eventSubscribeToEventsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Event_SubscribeToEventsClient interface {
+	Recv() (*EventMsg, error)
+	grpc.ClientStream
+}
+
+type eventSubscribeToEventsClient struct {
+	grpc.ClientStream
+}
+
+func (x *eventSubscribeToEventsClient) Recv() (*EventMsg, error) {
+	m := new(EventMsg)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *eventClient) BroadcastEvent(ctx context.Context, in *EventCode, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/Event/BroadcastEvent", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // EventServer is the server API for Event service.
 // All implementations must embed UnimplementedEventServer
 // for forward compatibility
 type EventServer interface {
-	Status(context.Context, *Void) (*StringMsg, error)
+	Status(context.Context, *emptypb.Empty) (*StringMsg, error)
 	Echo(context.Context, *StringMsg) (*StringMsg, error)
+	SubscribeToEvents(*emptypb.Empty, Event_SubscribeToEventsServer) error
+	BroadcastEvent(context.Context, *EventCode) (*emptypb.Empty, error)
 	mustEmbedUnimplementedEventServer()
 }
 
@@ -61,11 +107,17 @@ type EventServer interface {
 type UnimplementedEventServer struct {
 }
 
-func (UnimplementedEventServer) Status(context.Context, *Void) (*StringMsg, error) {
+func (UnimplementedEventServer) Status(context.Context, *emptypb.Empty) (*StringMsg, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Status not implemented")
 }
 func (UnimplementedEventServer) Echo(context.Context, *StringMsg) (*StringMsg, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Echo not implemented")
+}
+func (UnimplementedEventServer) SubscribeToEvents(*emptypb.Empty, Event_SubscribeToEventsServer) error {
+	return status.Errorf(codes.Unimplemented, "method SubscribeToEvents not implemented")
+}
+func (UnimplementedEventServer) BroadcastEvent(context.Context, *EventCode) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BroadcastEvent not implemented")
 }
 func (UnimplementedEventServer) mustEmbedUnimplementedEventServer() {}
 
@@ -81,7 +133,7 @@ func RegisterEventServer(s grpc.ServiceRegistrar, srv EventServer) {
 }
 
 func _Event_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Void)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -93,7 +145,7 @@ func _Event_Status_Handler(srv interface{}, ctx context.Context, dec func(interf
 		FullMethod: "/Event/Status",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EventServer).Status(ctx, req.(*Void))
+		return srv.(EventServer).Status(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -116,6 +168,45 @@ func _Event_Echo_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Event_SubscribeToEvents_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(emptypb.Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(EventServer).SubscribeToEvents(m, &eventSubscribeToEventsServer{stream})
+}
+
+type Event_SubscribeToEventsServer interface {
+	Send(*EventMsg) error
+	grpc.ServerStream
+}
+
+type eventSubscribeToEventsServer struct {
+	grpc.ServerStream
+}
+
+func (x *eventSubscribeToEventsServer) Send(m *EventMsg) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _Event_BroadcastEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EventCode)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EventServer).BroadcastEvent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Event/BroadcastEvent",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EventServer).BroadcastEvent(ctx, req.(*EventCode))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Event_ServiceDesc is the grpc.ServiceDesc for Event service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -131,7 +222,17 @@ var Event_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "Echo",
 			Handler:    _Event_Echo_Handler,
 		},
+		{
+			MethodName: "BroadcastEvent",
+			Handler:    _Event_BroadcastEvent_Handler,
+		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "SubscribeToEvents",
+			Handler:       _Event_SubscribeToEvents_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "event.proto",
 }

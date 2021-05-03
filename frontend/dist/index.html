@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GRPC Frontend</title>
+<script src="main.js"></script>
+<style>
+  :root {
+    --desktop-font-size: 1.3rem/1.5;
+    --mobile-font-size: 1.1rem/1.4;
+    --text-color: #2d2d2d;
+    --link-color: blue;
+    --primary-color: lightsteelblue;
+    --secondary-color: aliceblue;
+    --tertiary-color: whitesmoke;
+  }
+  body {
+    color: var(--text-color);
+  }
+  body {
+    font: var(--desktop-font-size) -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto, Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji", "Segoe UI Symbol";
+  }
+
+  h1,h2,h3,h4,h5,h6,p,blockquote,dl,img,figure {
+    margin: 2rem 0;
+  }
+
+  h1,h2,h3,h4,h5,h6 { font-weight: bold; line-height: 1.2; }
+  h1 { font-size: 200%; }
+  h2 { font-size: 150%; }
+  h3 { font-size: 120%; }
+  h4,h5,h6 { font-size: 100%; }
+  h5, h6 { text-transform: uppercase; }
+  table {
+    border: 1px solid var(--primary-color);
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: 100%;
+    text-align: center;
+  }
+  table tr { border-bottom: 1px solid var(--primary-color); }
+  table tbody tr:nth-child(even) { background: var(--tertiary-color); }
+  table th { background: var(--secondary-color); font-weight: bold; }
+  table th, table td { padding: 2px; }
+  table th:not(last-of-type), table td:not(last-of-type) { border-right: 1px solid var(--primary-color); }
+
+  .container {
+    width: 900px;
+    margin: 0 auto;
+  }
+
+  .alert-success {
+    color: green;
+  }
+  .alert-danger {
+    color: red;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="echo-test">
+      <h3 class="title">Performing echo test...</h3>
+      <div id="echo_test_alert"></div>
+    </div>  
+    <div class="server-streams">
+      <h3 class="title">Ready to receive messages from server....</h3>
+      <div id="server_streams_alert"></div>
+      <div class="sse-msg">
+        <table id="stream_msgs">
+        </table>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,10 +1,13 @@
 package main
 
 import (
-	"grpc-start/protos"
+	"grpc-sse/protos"
 	"log"
 	"net"
 	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
@@ -14,8 +17,11 @@ import (
 func main() {
 	gs := grpc.NewServer()
 	logger := grpclog.NewLoggerV2(os.Stdout, os.Stdout, os.Stdout)
+
+	eventsCh := make(chan EventRecord)
 	cs := &EventServer{
-		Log: logger,
+		Log:     logger,
+		EventCh: eventsCh,
 	}
 
 	protos.RegisterEventServer(gs, cs)
@@ -29,6 +35,30 @@ func main() {
 		log.Fatalf("Unable to listen: %s", err)
 	}
 
-	logger.Infoln("Starting gRpc server...")
-	gs.Serve(l)
+	go cs.EventLoop()
+
+	stopChan := make(chan os.Signal, 1)
+	// bind OS events to the signal channel
+	signal.Notify(stopChan, syscall.SIGTERM, syscall.SIGINT)
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		<-stopChan
+		log.Println("Exit signal received...")
+		close(eventsCh)
+		log.Println("Stopping gRpc")
+		gs.GracefulStop()
+		wg.Done()
+	}()
+
+	logger.Infoln("Starting gRpc server at port 9000...")
+	err = gs.Serve(l)
+
+	if err != nil {
+		close(eventsCh)
+		log.Fatalf("Unable to start: %s", err)
+	}
+
+	wg.Wait()
 }

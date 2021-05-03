@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "google/protobuf/empty.proto";
+
 option go_package = "protos/";
 
 message EventMsg {
@@ -12,10 +14,13 @@ message StringMsg {
   string Text = 1;
 }
 
-message Void {
+message EventCode {
+  string Code = 1;
 }
 
 service Event {
-  rpc Status(Void) returns(StringMsg);
+  rpc Status(google.protobuf.Empty) returns(StringMsg);
   rpc Echo(StringMsg) returns(StringMsg);
+  rpc SubscribeToEvents(google.protobuf.Empty) returns(stream EventMsg);
+  rpc BroadcastEvent(EventCode) returns(google.protobuf.Empty);
 }
