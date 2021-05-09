@@ -17,10 +17,6 @@ static_resources:
           config:
             codec_type: auto
             stat_prefix: ingress_http
-            access_log:
-            - name: envoy.file_access_log
-              config:
-                path: "/var/log/access.log"
             route_config:
               name: local_route
               virtual_hosts:
@@ -47,11 +43,11 @@ static_resources:
   
   clusters:
   - name: events_srv_cluster
-    connect_timeout: 20s
+    connect_timeout: 1s
     type: strict_dns
     lb_policy: round_robin
     http2_protocol_options: {}
     hosts:
     - socket_address:
-        address: 192.168.64.1
+        address: host.docker.internal
         port_value: 9000
